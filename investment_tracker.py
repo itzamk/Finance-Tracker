@@ -50,7 +50,7 @@ class InvestmentTracker(tk.Tk):
         self.inv_table.heading('Date', text='Date')
         self.inv_table.heading('Current Value', text='Current Value')
         self.inv_table.grid(column=0, row=5, columnspan=2, padx=10, pady=10, sticky='nsew')  # Make the Treeview resizable
-        
+    
         self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.inv_table.yview)
         self.scrollbar.grid(column=2, row=5, sticky='ns')
         self.inv_table.configure(yscrollcommand=self.scrollbar.set)
