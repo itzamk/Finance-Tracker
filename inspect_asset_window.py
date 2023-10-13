@@ -10,37 +10,41 @@ class InspectAssetWindow(tk.Toplevel):
         super().__init__(master)
         self.title(f"Inspecting {asset_name}")
 
-        asset_details, transaction_history = get_asset_details(asset_name)
+        self.asset_details, self.transaction_history = get_asset_details(asset_name)
 
-        # Top Left Quadrant: Asset Details
-        self.details_frame = tk.Frame(self)
-        self.details_frame.grid(row=0, column=0, sticky="nsew")
+        # Top Left Quadrant: Container Frame
+        self.left_container = tk.Frame(self)
+        self.left_container.grid(row=0, column=0, sticky="nsew")
+
+        # Asset Details Frame
+        self.details_frame = tk.Frame(self.left_container)
+        self.details_frame.pack(fill="both", expand=True)
 
         self.asset_name_label = tk.Label(self.details_frame, text=asset_name, font=("Arial", 24, "bold"))
         self.asset_name_label.pack()
 
-        self.amount_label = tk.Label(self.details_frame, text=f"Amount Holding: {asset_details[2]}")
+        self.amount_label = tk.Label(self.details_frame, text=f"Amount Holding: {self.asset_details[2]}")
         self.amount_label.pack()
 
-        self.price_label = tk.Label(self.details_frame, text=f"Current Price: ${asset_details[3]:,.2f}")
+        self.price_label = tk.Label(self.details_frame, text=f"Current Price: ${self.asset_details[3]:,.2f}")
         self.price_label.pack()
 
-        self.value_label = tk.Label(self.details_frame, text=f"Total Value: ${asset_details[2]*asset_details[3]:,.2f}")
+        self.value_label = tk.Label(self.details_frame, text=f"Total Value: ${self.asset_details[2]*self.asset_details[3]:,.2f}")
         self.value_label.pack()
 
-        # Top Left Quadrant: Buttons
-        self.button_frame = tk.Frame(self)  # Create a new frame to hold the buttons
-        self.button_frame.pack(pady=10)  # Pack the frame with some padding for aesthetics
+        # Buttons Frame
+        self.button_frame = tk.Frame(self.left_container)  # Parent is now self.left_container
+        self.button_frame.pack(fill="x")  # Filling along the x-axis to take full width
 
         # Create and pack/grid the buttons within the button frame
-        self.modify_button = tk.Button(self.button_frame, text="Modify", command=self.open_modify_transaction_window)
-        self.modify_button.grid(row=0, column=0, padx=5)  # Adjust padx/pady as needed
+        self.modify_button = tk.Button(self.button_frame, text="Modify", command=self.open_add_transaction_window)
+        self.modify_button.grid(row=0, column=0, padx=5, pady=5)  # Added pady for spacing
 
         self.add_button = tk.Button(self.button_frame, text="Add", command=self.open_add_transaction_window)
-        self.add_button.grid(row=0, column=1, padx=5)
+        self.add_button.grid(row=1, column=0, padx=5, pady=5)  # Added pady for spacing
 
         self.delete_button = tk.Button(self.button_frame, text="Delete", command=self.delete_selected_transaction)
-        self.delete_button.grid(row=0, column=2, padx=5)
+        self.delete_button.grid(row=2, column=0, padx=5, pady=5)  # Added pady for spacing
 
         # Top Right Quadrant: Dummy Chart
         self.chart_frame = tk.Frame(self)
@@ -66,34 +70,32 @@ class InspectAssetWindow(tk.Toplevel):
         self.tree.heading('Type', text='Transaction Type')
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-        for transaction in transaction_history:
+        for transaction in self.transaction_history:
             self.tree.insert('', 'end', values=(transaction[2], transaction[3], transaction[4], transaction[5]))
 
-def open_add_transaction_window(self):
-    AddTransactionWindow(self, self.asset_id)
+    def open_add_transaction_window(self):
+            AddTransactionWindow(self, self.asset_details[0])
 
-def open_modify_transaction_window(self):
-    # Open a new window to modify the selected transaction
+    #def open_modify_transaction_window(self):
+        # Open a new window to modify the selected transaction
 
-def delete_selected_transaction(self):
-    selected_item = self.transactions_tree.selection()
-    if selected_item:
-        transaction_id = self.transactions_tree.item(selected_item, 'values')[0]
-        delete_transaction(transaction_id)
-        self.update_transactions()  # Update the transactions list
-    else:
-        tk.messagebox.showwarning("No Selection", "No transaction selected. Please select a transaction to delete.")
+    def delete_selected_transaction(self):
+        selected_item = self.transactions_tree.selection()
+        if selected_item:
+            transaction_id = self.transactions_tree.item(selected_item, 'values')[0]
+            delete_transaction(transaction_id)
+            self.update_transactions()  # Update the transactions list
+        else:
+            tk.messagebox.showwarning("No Selection", "No transaction selected. Please select a transaction to delete.")
 
-def update_transactions(self):
-    # Clear existing rows in the transactions list
-    for row in self.transactions_tree.get_children():
-        self.transactions_tree.delete(row)
-    
-    # Get updated transactions data from the database
-    asset_details, transaction_history = get_asset_details(self.asset_name)
-    
-    # Insert updated transactions data into the transactions list
-    for transaction in transaction_history:
-        self.transactions_tree.insert('', 'end', values=transaction)
-
-
+    def update_transactions(self):
+        # Clear existing rows in the transactions list
+        for row in self.transactions_tree.get_children():
+            self.transactions_tree.delete(row)
+        
+        # Get updated transactions data from the database
+        asset_details, transaction_history = get_asset_details(self.asset_name)
+        
+        # Insert updated transactions data into the transactions list
+        for transaction in transaction_history:
+            self.transactions_tree.insert('', 'end', values=transaction)
