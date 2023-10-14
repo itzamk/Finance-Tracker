@@ -64,7 +64,7 @@ def get_asset_details(asset_name):
 
         # Get transaction history
         query = '''
-                SELECT transaction_date, transaction_price, transaction_amount, transaction_type
+                SELECT id, transaction_date, transaction_price, transaction_amount, transaction_type
                 FROM transactions
                 WHERE investment_id = ?
                 ORDER BY transaction_date DESC
@@ -75,6 +75,37 @@ def get_asset_details(asset_name):
 
         return asset_details, transaction_history
 
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        conn.close()
+
+def update_total_holding(investment_id):
+    try:
+        conn = sqlite3.connect('investments.db')
+        c = conn.cursor()
+
+        # Adjust the transaction_amount for Sell transactions, then sum all transaction_amount values.
+        c.execute('''
+                  SELECT SUM(
+                      CASE 
+                          WHEN transaction_type = 'sell' THEN -transaction_amount
+                          ELSE transaction_amount
+                      END
+                  ) 
+                  FROM transactions 
+                  WHERE investment_id = ?
+                  ''', (investment_id,))
+        total_holding = c.fetchone()[0]
+
+        # Now update the investments table with the new total_holding.
+        c.execute('''
+                  UPDATE investments 
+                  SET amount = ? 
+                  WHERE id = ?
+                  ''', (total_holding, investment_id))
+
+        conn.commit()
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
@@ -96,11 +127,18 @@ def add_transaction(investment_id, transaction_date, transaction_price, transact
         print(f"An error occurred: {e}")
     finally:
         conn.close()
+    
+    # Call update_total_holding after adding a transaction
+    update_total_holding(investment_id)
 
 def modify_transaction(transaction_id, new_date=None, new_price=None, new_amount=None, new_type=None):
     try:
         conn = sqlite3.connect('investments.db')
         c = conn.cursor()
+        
+        # Get the investment_id before modifying the transaction
+        c.execute('SELECT investment_id FROM transactions WHERE id = ?', (transaction_id,))
+        investment_id = c.fetchone()[0]
 
         if new_date:
             c.execute('UPDATE transactions SET transaction_date = ? WHERE id = ?', (new_date, transaction_id))
@@ -116,11 +154,18 @@ def modify_transaction(transaction_id, new_date=None, new_price=None, new_amount
         print(f"An error occurred: {e}")
     finally:
         conn.close()
+    
+    # Call update_total_holding after adding a transaction
+    update_total_holding(investment_id)
 
 def delete_transaction(transaction_id):
     try:
         conn = sqlite3.connect('investments.db')
         c = conn.cursor()
+        
+        # Get the investment_id before deleting the transaction
+        c.execute('SELECT investment_id FROM transactions WHERE id = ?', (transaction_id,))
+        investment_id = c.fetchone()[0]
 
         c.execute('DELETE FROM transactions WHERE id = ?', (transaction_id,))
 
@@ -129,6 +174,9 @@ def delete_transaction(transaction_id):
         print(f"An error occurred: {e}")
     finally:
         conn.close()
+    
+    # Call update_total_holding after adding a transaction
+    update_total_holding(investment_id)
 
 def refresh_prices():
     conn = sqlite3.connect('investments.db')

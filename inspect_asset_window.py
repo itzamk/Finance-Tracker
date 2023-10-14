@@ -71,18 +71,18 @@ class InspectAssetWindow(tk.Toplevel):
         self.tree.pack(fill=tk.BOTH, expand=True)
 
         for transaction in self.transaction_history:
-            self.tree.insert('', 'end', values=(transaction[2], transaction[3], transaction[4], transaction[5]))
+            self.tree.insert('', 'end', values=(transaction[1], transaction[2], transaction[3], transaction[4]), tags=(transaction[0],))
 
     def open_add_transaction_window(self):
-            AddTransactionWindow(self, self.asset_details[0])
+            AddTransactionWindow(self, self.asset_details[0], update_callback=self.update_transactions)
 
     #def open_modify_transaction_window(self):
         # Open a new window to modify the selected transaction
 
     def delete_selected_transaction(self):
-        selected_item = self.transactions_tree.selection()
+        selected_item = self.tree.selection()
         if selected_item:
-            transaction_id = self.transactions_tree.item(selected_item, 'values')[0]
+            transaction_id = self.tree.item(selected_item, 'tags')[0][0]
             delete_transaction(transaction_id)
             self.update_transactions()  # Update the transactions list
         else:
@@ -90,12 +90,12 @@ class InspectAssetWindow(tk.Toplevel):
 
     def update_transactions(self):
         # Clear existing rows in the transactions list
-        for row in self.transactions_tree.get_children():
-            self.transactions_tree.delete(row)
+        for row in self.tree.get_children():
+            self.tree.delete(row)
         
         # Get updated transactions data from the database
-        asset_details, transaction_history = get_asset_details(self.asset_name)
+        asset_details, transaction_history = get_asset_details(self.asset_details[1])
         
         # Insert updated transactions data into the transactions list
         for transaction in transaction_history:
-            self.transactions_tree.insert('', 'end', values=transaction)
+            self.tree.insert('', 'end', values=(transaction[1], transaction[2], transaction[3], transaction[4]))
