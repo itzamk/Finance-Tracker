@@ -1,3 +1,5 @@
+# add_asset_window.py
+
 import tkinter as tk
 from investment_database import add_new_asset
 

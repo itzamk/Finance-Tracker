@@ -1,3 +1,5 @@
+# investment_database.py
+
 import sqlite3
 from price_fetcher import get_current_price
 import threading
@@ -12,7 +14,8 @@ def setup_database():
               (id INTEGER PRIMARY KEY,
               name TEXT UNIQUE,
               amount REAL DEFAULT 0,
-              current_price REAL)
+              current_price REAL,
+              deleted INTEGER DEFAULT 0)
               ''')
 
     c.execute('''
@@ -51,7 +54,6 @@ def add_new_asset(asset_name):
     finally:
         conn.close()
 
-
 def get_asset_details(asset_name):
     conn = sqlite3.connect('investments.db')
     c = conn.cursor()
@@ -77,6 +79,26 @@ def get_asset_details(asset_name):
 
     except Exception as e:
         print(f"An error occurred: {e}")
+    finally:
+        conn.close()
+
+def get_transaction_details(transaction_id):
+    conn = sqlite3.connect('investments.db')
+    c = conn.cursor()
+    
+    try:
+        query = '''
+                SELECT id, transaction_date, transaction_price, transaction_amount, transaction_type 
+                FROM transactions 
+                WHERE id = ?
+                '''
+        c.execute(query, (transaction_id,))
+        transaction_details = c.fetchone()
+        return transaction_details
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    
     finally:
         conn.close()
 
@@ -177,6 +199,45 @@ def delete_transaction(transaction_id):
     
     # Call update_total_holding after adding a transaction
     update_total_holding(investment_id)
+
+def soft_delete_asset(asset_name):
+    conn = sqlite3.connect('investments.db')
+    c = conn.cursor()
+    
+    c.execute('''
+              UPDATE investments
+              SET deleted = 1
+              WHERE name = ?
+              ''', (asset_name,))
+    
+    conn.commit()
+    conn.close()
+
+def restore_asset(asset_name):
+    try:
+        conn = sqlite3.connect('investments.db')
+        c = conn.cursor()
+
+        c.execute('UPDATE investments SET deleted = 0 WHERE name = ?', (asset_name,))
+
+        conn.commit()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        conn.close()
+
+def get_deleted_assets():
+    conn = sqlite3.connect('investments.db')
+    c = conn.cursor()
+    
+    c.execute('''
+              SELECT * FROM investments
+              WHERE deleted = 1
+              ''')
+    
+    deleted_assets = c.fetchall()
+    conn.close()
+    return deleted_assets
 
 def refresh_prices():
     conn = sqlite3.connect('investments.db')
