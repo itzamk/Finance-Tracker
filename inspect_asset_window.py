@@ -9,12 +9,12 @@ from add_transaction_window import AddTransactionWindow
 from modify_transaction_window import ModifyTransactionWindow
 
 class InspectAssetWindow(tk.Toplevel):
-    def __init__(self, master, asset_name, app):
+    def __init__(self, master, asset_id, app):
         super().__init__(master)
         self.app = app
-        self.title(f"Inspecting {asset_name}")
 
-        self.asset_details, self.transaction_history = get_asset_details(asset_name)
+        self.asset_details, self.transaction_history = get_asset_details(asset_id)
+        self.title(f"Inspecting {self.asset_details[1]}")
 
         # Top Left Quadrant: Container Frame
         self.left_container = ttk.Frame(self)
@@ -24,7 +24,7 @@ class InspectAssetWindow(tk.Toplevel):
         self.details_frame = ttk.Frame(self.left_container)
         self.details_frame.pack(fill="both", expand=True)
 
-        self.asset_name_label = ttk.Label(self.details_frame, text=asset_name, font=("Arial", 24, "bold"))
+        self.asset_name_label = ttk.Label(self.details_frame, text=self.asset_details[1], font=("Arial", 24, "bold"))
         self.asset_name_label.pack()
 
         self.amount_label = ttk.Label(self.details_frame, text=f"Amount Holding: {self.asset_details[2]}")
@@ -107,7 +107,7 @@ class InspectAssetWindow(tk.Toplevel):
         self.update_transactions()
 
     def update_asset_details(self):
-        self.asset_details, self.transaction_history = get_asset_details(self.asset_details[1])
+        self.asset_details, self.transaction_history = get_asset_details(self.asset_details[0])
         self.amount_label.config(text=f"Amount Holding: {self.asset_details[2]}")
         self.price_label.config(text=f"Current Price: ${self.asset_details[3]:,.2f}")
         self.value_label.config(text=f"Total Value: ${self.asset_details[2]*self.asset_details[3]:,.2f}")
@@ -118,7 +118,7 @@ class InspectAssetWindow(tk.Toplevel):
             self.tree.delete(row)
         
         # Get updated transactions data from the database
-        asset_details, transaction_history = get_asset_details(self.asset_details[1])
+        asset_details, transaction_history = get_asset_details(self.asset_details[0])
         
         # Insert updated transactions data into the transactions list
         for transaction in transaction_history:

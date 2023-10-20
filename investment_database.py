@@ -1,7 +1,7 @@
 # investment_database.py
 
 import sqlite3
-from price_fetcher import get_current_price
+from coingecko import fetch_price, fetch_asset_info
 import threading
 import time
 
@@ -11,7 +11,7 @@ def setup_database():
 
     c.execute('''
               CREATE TABLE IF NOT EXISTS investments
-              (id INTEGER PRIMARY KEY,
+              (id TEXT PRIMARY KEY,
               name TEXT UNIQUE,
               amount REAL DEFAULT 0,
               current_price REAL,
@@ -21,7 +21,7 @@ def setup_database():
     c.execute('''
               CREATE TABLE IF NOT EXISTS transactions
               (id INTEGER PRIMARY KEY,
-              investment_id INTEGER,
+              investment_id TEXT,
               transaction_date DATE,
               transaction_price REAL,
               transaction_amount REAL,
@@ -32,16 +32,16 @@ def setup_database():
     conn.commit()
     conn.close()
 
-def add_new_asset(asset_name):
+def add_new_asset(asset_id, asset_name):
     try:
         conn = sqlite3.connect('investments.db')
         c = conn.cursor()
 
         # Fetch the current price of the asset
-        current_price = get_current_price(asset_name)
+        asset_info = fetch_asset_info(asset_id)
 
-        query = '''INSERT INTO investments (name, current_price) VALUES (?, ?)'''
-        c.execute(query, (asset_name, current_price))
+        query = '''INSERT INTO investments (id, name, current_price) VALUES (?, ?, ?)'''
+        c.execute(query, (asset_id, asset_name, asset_info['price']))
 
         conn.commit()
 
@@ -54,14 +54,14 @@ def add_new_asset(asset_name):
     finally:
         conn.close()
 
-def get_asset_details(asset_name):
+def get_asset_details(asset_id):
     conn = sqlite3.connect('investments.db')
     c = conn.cursor()
 
     try:
         # Get asset details
-        query = '''SELECT id, name, amount, current_price FROM investments WHERE name = ?'''
-        c.execute(query, (asset_name,))
+        query = '''SELECT id, name, amount, current_price FROM investments WHERE id = ?'''
+        c.execute(query, (asset_id,))
         asset_details = c.fetchone()
 
         # Get transaction history
@@ -72,7 +72,7 @@ def get_asset_details(asset_name):
                 ORDER BY transaction_date DESC
                 '''
         
-        c.execute(query, (asset_details[0],))
+        c.execute(query, (asset_id,))
         transaction_history = c.fetchall()
 
         return asset_details, transaction_history
@@ -119,6 +119,10 @@ def update_total_holding(investment_id):
                   WHERE investment_id = ?
                   ''', (investment_id,))
         total_holding = c.fetchone()[0]
+
+        # Check if total_holding is None and set it to 0 if it is
+        if total_holding is None:
+            total_holding = 0
 
         # Now update the investments table with the new total_holding.
         c.execute('''
@@ -188,6 +192,11 @@ def delete_transaction(transaction_id):
         # Get the investment_id before deleting the transaction
         c.execute('SELECT investment_id FROM transactions WHERE id = ?', (transaction_id,))
         investment_id = c.fetchone()[0]
+        # if row is None:
+        #     print(f"No transaction found for id {transaction_id}")
+        #     return  # Exit the function early if no transaction is found
+        
+        # investment_id = row[0]
 
         c.execute('DELETE FROM transactions WHERE id = ?', (transaction_id,))
 
@@ -200,25 +209,25 @@ def delete_transaction(transaction_id):
     # Call update_total_holding after adding a transaction
     update_total_holding(investment_id)
 
-def soft_delete_asset(asset_name):
+def soft_delete_asset(asset_id):
     conn = sqlite3.connect('investments.db')
     c = conn.cursor()
     
     c.execute('''
               UPDATE investments
               SET deleted = 1
-              WHERE name = ?
-              ''', (asset_name,))
+              WHERE id = ?
+              ''', (asset_id,))
     
     conn.commit()
     conn.close()
 
-def restore_asset(asset_name):
+def restore_asset(asset_id):
     try:
         conn = sqlite3.connect('investments.db')
         c = conn.cursor()
 
-        c.execute('UPDATE investments SET deleted = 0 WHERE name = ?', (asset_name,))
+        c.execute('UPDATE investments SET deleted = 0 WHERE id = ?', (asset_id,))
 
         conn.commit()
     except Exception as e:
@@ -242,10 +251,11 @@ def get_deleted_assets():
 def refresh_prices():
     conn = sqlite3.connect('investments.db')
     c = conn.cursor()
-    assets = c.execute('SELECT name FROM investments').fetchall()
+    assets = c.execute('SELECT id FROM investments WHERE deleted = 0').fetchall()
     for asset in assets:
-        current_price = get_current_price(asset[0])
-        c.execute('UPDATE investments SET current_price = ? WHERE name = ?', (current_price, asset[0]))
+        current_price = fetch_price(asset[0])
+        if current_price is not None:  # only update if fetch was successful
+            c.execute('UPDATE investments SET current_price = ? WHERE id = ?', (current_price, asset[0]))
     conn.commit()
     conn.close()
 

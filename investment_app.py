@@ -8,7 +8,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from add_asset_window import AddAssetWindow
 from inspect_asset_window import InspectAssetWindow
 from deleted_assets_window import DeletedAssetsWindow
-from investment_database import soft_delete_asset
+from investment_database import soft_delete_asset, start_auto_refresh
 
 class InvestmentApp:
     def __init__(self, root):
@@ -17,6 +17,8 @@ class InvestmentApp:
 
         self.create_widgets()
         self.update_assets()
+        self.schedule_refresh()
+        start_auto_refresh()
 
     def create_widgets(self):
 
@@ -77,7 +79,7 @@ class InvestmentApp:
         # Fetch the data from the database
         conn = sqlite3.connect('investments.db')
         c = conn.cursor()
-        
+
         c.execute('''
             SELECT name, amount, current_price 
             FROM investments 
@@ -95,7 +97,7 @@ class InvestmentApp:
         self.ax.clear()
 
         # Draw the new pie chart
-        self.ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140)
+        self.ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
         self.ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 
         # Draw the canvas again to update the display
@@ -107,8 +109,8 @@ class InvestmentApp:
     def open_inspect_asset_window(self):
         selected_item = self.tree.selection()
         if selected_item:
-            asset_name = self.tree.item(selected_item, 'values')[0]
-            InspectAssetWindow(self.root, asset_name, self)
+            asset_id = self.tree.item(selected_item, 'tags')[0]
+            InspectAssetWindow(self.root, asset_id, self)
         else:
             tk.messagebox.showwarning("No Selection", "No asset selected. Please select an asset to inspect.")
 
@@ -120,8 +122,8 @@ class InvestmentApp:
                 "Are you sure you want to delete this asset?"
             )
             if confirmation:
-                asset_name = self.tree.item(selected_item, 'values')[0]
-                soft_delete_asset(asset_name)
+                asset_id = self.tree.item(selected_item, 'tags')[0]
+                soft_delete_asset(asset_id)
                 self.update_ui()
         else:
             tk.messagebox.showwarning("No Selection", "No asset selected. Please select an asset to remove.")
@@ -131,6 +133,9 @@ class InvestmentApp:
 
     def update_total_value(self):
         total_value = self.get_total_value()
+
+        if total_value is None:
+            total_value = 0  # Set total_value to 0 if it's None
         self.total_value_label.config(text=f"Portfolio Total: ${total_value:,.2f}")
 
     def update_assets(self):
@@ -141,15 +146,15 @@ class InvestmentApp:
         # Get updated asset data from the database
         conn = sqlite3.connect('investments.db')
         c = conn.cursor()
-        c.execute('SELECT name, amount, current_price FROM investments WHERE deleted = 0')
+        c.execute('SELECT id, name, amount, current_price FROM investments WHERE deleted = 0')
         assets = c.fetchall()
         conn.close()
 
         # Insert updated asset data into the table
         for asset in assets:
-            asset_name, amount, current_price = asset
-            total_value = amount * current_price if current_price is not None else None
-            self.tree.insert('', 'end', values=(asset_name, amount, current_price, total_value))
+            asset_id, asset_name, amount, current_price = asset
+            total_value = amount * current_price if amount is not None and current_price is not None else None
+            self.tree.insert('', 'end', values=(asset_name, amount, current_price, total_value), tags=(asset_id))
 
         self.update_total_value()
         self.update_pie_chart()
@@ -164,6 +169,15 @@ class InvestmentApp:
     def update_ui(self):
         self.update_assets()
         self.update_total_value()
+    
+    def schedule_refresh(self):
+        self.update_ui()
+        self.root.after(10000, self.schedule_refresh)  # Schedule the next refresh
 
     def run(self):
+        #self.schedule_ui_update()
         self.root.mainloop()
+        
+    # def schedule_ui_update(self):
+    #     self.update_ui()  # Update the UI
+    #     self.root.after(10000, self.schedule_ui_update)  # Schedule the next update in 60 seconds (60000 milliseconds)

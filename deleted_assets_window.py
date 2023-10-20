@@ -31,8 +31,8 @@ class DeletedAssetsWindow(tk.Toplevel):
     def restore_selected_asset(self):
         selected_item = self.tree.selection()
         if selected_item:
-            asset_name = self.tree.item(selected_item, 'values')[0]
-            restore_asset(asset_name)
+            asset_id = self.tree.item(selected_item, 'tags')[0]
+            restore_asset(asset_id)
             self.update_deleted_assets()
             self.app.update_assets()
         else:
@@ -44,11 +44,11 @@ class DeletedAssetsWindow(tk.Toplevel):
 
         conn = sqlite3.connect('investments.db')
         c = conn.cursor()
-        c.execute('SELECT name, amount, current_price FROM investments WHERE deleted = 1')
+        c.execute('SELECT id, name, amount, current_price FROM investments WHERE deleted = 1')
         deleted_assets = c.fetchall()
         conn.close()
 
         for asset in deleted_assets:
-            asset_name, amount, current_price = asset
+            asset_id, asset_name, amount, current_price = asset
             total_value = amount * current_price if current_price is not None else None
-            self.tree.insert('', 'end', values=(asset_name, amount, current_price, total_value))
+            self.tree.insert('', 'end', values=(asset_name, amount, current_price, total_value), tags=(asset_id))
