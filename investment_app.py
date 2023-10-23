@@ -40,10 +40,6 @@ class InvestmentApp:
 
         # Create a pie chart
         self.fig, self.ax = plt.subplots()
-        # sizes = [15, 30, 45, 10] # Dummy data for the pie chart
-        # labels = ['Asset A', 'Asset B', 'Asset C', 'Asset D']
-        # self.ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140)
-        # self.ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 
         # Embed the pie chart in the Tkinter window
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.chart_frame)
@@ -91,7 +87,7 @@ class InvestmentApp:
 
         # Separate the data into labels and sizes
         labels = [asset[0] for asset in assets]
-        sizes = [asset[1] for asset in assets]
+        sizes = [asset[1]*asset[2] for asset in assets]
 
         # Clear the existing pie chart
         self.ax.clear()

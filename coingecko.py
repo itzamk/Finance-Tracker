@@ -43,3 +43,12 @@ def fetch_asset_info(asset_id):
     else:
         print(f'Failed to retrieve asset info: {response.status_code}')
         return None
+    
+def fetch_price_history(crypto_id, days='7', interval='daily'):
+    url = f'https://api.coingecko.com/api/v3/coins/{crypto_id}/market_chart?vs_currency=usd&days={days}&interval={interval}'
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f'Failed to retrieve price history: {response.status_code}')
+        return None
