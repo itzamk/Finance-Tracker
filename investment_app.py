@@ -45,15 +45,6 @@ class InvestmentApp:
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.chart_frame)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        # style = ttk.Style()
-        # style.configure("TButton",
-        #                 font=('Arial', 12),
-        #                 foreground='black',
-        #                 background='black',
-        #                 padding=10,
-        #                 relief=tk.RAISED,
-        #                 width=20)
-
         # Create a frame to hold the buttons
         self.button_frame = tk.Frame(self.root)
         self.button_frame.pack(pady=10)  # Adding some padding around the button frame
@@ -94,7 +85,7 @@ class InvestmentApp:
 
         # Draw the new pie chart
         self.ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
-        self.ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        self.ax.axis('equal')
 
         # Draw the canvas again to update the display
         self.canvas.draw()
@@ -173,7 +164,3 @@ class InvestmentApp:
     def run(self):
         #self.schedule_ui_update()
         self.root.mainloop()
-        
-    # def schedule_ui_update(self):
-    #     self.update_ui()  # Update the UI
-    #     self.root.after(10000, self.schedule_ui_update)  # Schedule the next update in 60 seconds (60000 milliseconds)

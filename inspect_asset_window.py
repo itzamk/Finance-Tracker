@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from investment_database import get_asset_details, get_transaction_details, delete_transaction
 from add_transaction_window import AddTransactionWindow
@@ -23,7 +24,7 @@ class InspectAssetWindow(tk.Toplevel):
         self.title_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
 
         # Title Label
-        self.asset_name_label = tk.Label(self.title_frame, text=f'{self.asset_details[1]} Overview\t\t ${self.asset_details[3]:,.2f}', font=("Arial", 24, "bold"))
+        self.asset_name_label = tk.Label(self.title_frame, text=f'{self.asset_details[1]} Overview\t\t\t ${self.asset_details[3]:,.2f}', font=("Arial", 24, "bold"))
         self.asset_name_label.pack(pady=(10, 0))
 
         # Top Left Quadrant: Container Frame
@@ -97,9 +98,9 @@ class InspectAssetWindow(tk.Toplevel):
         if price_history_data is None:
             return  # Exit the function if price history data couldn't be fetched
         
-        # Extracting dates and prices from price_history
+        # Extracting dates and prices from price_history.strftime('%Y-%m-%d')
         price_history = price_history_data['prices']
-        dates = [datetime.datetime.utcfromtimestamp(item[0] / 1000).strftime('%Y-%m-%d') for item in price_history]
+        dates = [datetime.datetime.utcfromtimestamp(item[0] / 1000) for item in price_history]
         historical_prices = [item[1] for item in price_history]
         
         # Assume each item in transaction_history has the structure [transaction_date, transaction_price, transaction_amount, transaction_type]
@@ -112,7 +113,7 @@ class InspectAssetWindow(tk.Toplevel):
         total_amount = 0
 
         for i, date in enumerate(dates):
-            date_obj = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+            date_obj = date.date() #datetime.datetime.strptime(date, '%Y-%m-%d')
             total_cost = 0
             total_amount = 0
             for transaction in transaction_history:
@@ -133,12 +134,12 @@ class InspectAssetWindow(tk.Toplevel):
         self.ax.clear()
         self.ax.plot(dates, total_amount_input, label='Total Cost')
         self.ax.plot(dates, daily_value, label='Total Value')
+        self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d')) 
+        plt.xticks(rotation=-45)  # Rotate x-axis labels by 45 degrees
         self.ax.set_xlabel('Date')
         self.ax.set_ylabel('Value (USD)')
-        #self.fig.suptitle(self.asset_details[1], fontsize=20, fontweight='bold')
         self.ax.set_title('Cost and Value Over Time')
         self.ax.legend()
-        
         self.canvas.draw()
 
     def open_add_transaction_window(self):

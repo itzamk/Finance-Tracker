@@ -71,7 +71,6 @@ class AddAssetWindow(tk.Toplevel):
             tk.Label(self.info_frame, text=f"Name: {asset_info['name']}").pack(anchor=tk.W)
             tk.Label(self.info_frame, text=f"Ticker: {asset_info['ticker']}").pack(anchor=tk.W)
             tk.Label(self.info_frame, text=f"Price: ${asset_info['price']}").pack(anchor=tk.W)
-            # ... and so on for other info ...
         else:
             tk.Label(self.info_frame, text="No information available").pack(anchor=tk.W)
 
@@ -87,31 +86,3 @@ class AddAssetWindow(tk.Toplevel):
             add_new_asset(asset_id, asset_name)
             self.app.update_assets()  # Update the main window's table
             self.destroy()  # Close the AddAssetWindow after adding the asset
-
-
-'''
-class AddAssetWindow(tk.Toplevel):
-    def __init__(self, master, app):
-        super().__init__(master)
-        self.app = app
-        self.title("Add New Asset")
-
-        self.name_label = tk.Label(self, text="Asset Name:")
-        self.name_label.grid(row=0, column=0)
-        
-        self.assets = fetch_assets()
-        self.asset_names = [asset['symbol'].upper() for asset in self.assets]
-
-        self.name_entry = AutocompleteEntry(self)
-        self.name_entry.set_completion_list(self.asset_names)
-        self.name_entry.grid(row=0, column=1)
-
-        self.add_button = tk.Button(self, text="Add Asset", command=self.add_asset)
-        self.add_button.grid(row=1, columnspan=2)
-
-    def add_asset(self):
-        asset_name = self.name_entry.get()
-        if asset_name:  # check if the entry is not empty
-            add_new_asset(asset_name)
-            self.app.update_assets()  # Update the main window's table
-            self.destroy()  # Close the AddAssetWindow after adding the asset'''

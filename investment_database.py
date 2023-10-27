@@ -192,11 +192,6 @@ def delete_transaction(transaction_id):
         # Get the investment_id before deleting the transaction
         c.execute('SELECT investment_id FROM transactions WHERE id = ?', (transaction_id,))
         investment_id = c.fetchone()[0]
-        # if row is None:
-        #     print(f"No transaction found for id {transaction_id}")
-        #     return  # Exit the function early if no transaction is found
-        
-        # investment_id = row[0]
 
         c.execute('DELETE FROM transactions WHERE id = ?', (transaction_id,))
 
